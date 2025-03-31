@@ -8,14 +8,14 @@ employee_time_off (employee_id (PK), hours remaining, hours taken, total annual 
 */
 
 CREATE TABLE IF NOT EXISTS employee_personal_info(
-    first_name  TEXT    NOT NULL, 
-    last_name  TEXT     NOT NULL,
-    position  TEXT      NOT NULL,
-    phone   INTEGER CHECK (phone GLOB '???-???-????')   NOT NULL,
-    address TEXT        NOT NULL,
-    city    TEXT        NOT NULL,
-    state   TEXT        NOT NULL,
-    country TEXT        NOT NULL,
+    first_name      TEXT    NOT NULL, 
+    last_name       TEXT    NOT NULL,
+    position        TEXT    NOT NULL,
+    phone           INTEGER CHECK (phone GLOB '???-???-????')   NOT NULL,
+    address         TEXT    NOT NULL,
+    city            TEXT    NOT NULL,
+    state           TEXT    NOT NULL,
+    country         TEXT    NOT NULL,
     personal_email  TEXT    NOT NULL,
     PRIMARY KEY (employee_id) REFERENCES (badge_info, compensation_table, employee_company_info, employee_time_off)(employee_id) ON DELETE CASCADE
 );
