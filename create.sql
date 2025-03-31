@@ -20,11 +20,12 @@ CREATE TABLE IF NOT EXISTS employee_personal_info(
     PRIMARY KEY (employee_id) REFERENCES (badge_info, compensation_table, employee_company_info, employee_time_off)(employee_id) ON DELETE CASCADE
 );
 
+/*date is in DDMMYYYY format*/
 CREATE TABLE IF NOT EXISTS badge_info(
     activation_date     INTEGER NOT NULL,
     deactivation_date   INTEGER NOT NULL,
     FOREIGN KEY(employee_id),
-    PRIMARY KEY(badge_id) REFERENCES (badge_sign_in_times)(badge_id) ON DELETE CASCADE
+    PRIMARY KEY AUTOINCREMENT (badge_id) REFERENCES (badge_sign_in_times)(badge_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS compensation_table(
@@ -32,10 +33,9 @@ CREATE TABLE IF NOT EXISTS compensation_table(
     bonus               INTEGER NOT NULL,
     salary_set_date     INTEGER NOT NULL,
     FOREIGN KEY(employee_id)
-
 );
 
-/*make ref to the badge info table*/
+/*make ref to the badge info table. Date is in DDMMYYYY. time is in HHmm format*/
 CREATE TABLE IF NOT EXISTS badge_sign_in_times(
     date_scanned    INTEGER,
     time_scanned    INTEGER,
