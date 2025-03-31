@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS badge_info(
 CREATE TABLE IF NOT EXISTS compensation_table(
     salary              INTEGER NOT NULL,
     bonus               INTEGER NOT NULL,
-    salary_set_date     INTEGER, NOT NULL,
+    salary_set_date     INTEGER NOT NULL,
     FOREIGN KEY(employee_id)
 
 );
