@@ -19,21 +19,21 @@ connection = sqlite3.connect(db_path) #create the connection obj
 cursor = connection.cursor() #create the cursor obj
 
 #
-if not db_file_check:
-    open_sql_file = open(db_schema, "r")
-    create_sql_file = open_sql_file.read()
-    #print(create_sql_file)
-    open_sql_file.close()
-    #https://stackoverflow.com/questions/19472922/reading-external-sql-script-in-python
-    sqlCommands = create_sql_file.split(';')
-    #create table emp database if it doesnt exist
-    for command in sqlCommands:
-        try:
-            cursor.execute(command)
-        except sqlite3.OperationalError as oe:
-            print(f"Command skipped: {oe}")
-    #commits the changes to the db
-    connection.commit()
+#if not db_file_check:
+open_sql_file = open(db_schema, "r")
+create_sql_file = open_sql_file.read()
+#print(create_sql_file)
+open_sql_file.close()
+#https://stackoverflow.com/questions/19472922/reading-external-sql-script-in-python
+sqlCommands = create_sql_file.split(';')
+#create table emp database if it doesnt exist
+for command in sqlCommands:
+    try:
+        cursor.execute(command)
+    except sqlite3.OperationalError as oe:
+        print(f"Command skipped: {oe}")
+#commits the changes to the db
+connection.commit()
 
 #List of tables in the database
 tables = [
@@ -74,9 +74,10 @@ label3.pack(pady=20)
 entry_widgets = {}
 
 #Function to generate fields in a table
+#TODO - need to reduce number of duplicate data entry fields - consolidate them somehow
 def generate_fields_for_table(parent_frame, table_name):
     try:
-        cursor.execute(f"SELECT * FROM {table_name} LIMIT 1")
+        cursor.execute(f"SELECT * FROM {table_name} LIMIT 1")   #This is responsible for returning the files in the table
         columns = [desc[0] for desc in cursor.description]
 
         ttk.Label(parent_frame, text=f"{table_name}", font=("Helvetica", 12, "bold")).pack(pady=(10, 0))
@@ -92,7 +93,7 @@ def generate_fields_for_table(parent_frame, table_name):
     except sqlite3.OperationalError as e:
         ttk.Label(parent_frame, text=f"{table_name} not found", foreground="red").pack()
 
-# --- Create a scrollable frame in the tab ---
+#Create a scrollable frame in the tab
 canvas = tk.Canvas(create_tab1)
 scrollbar = ttk.Scrollbar(create_tab1, orient="vertical", command=canvas.yview)
 scroll_frame = ttk.Frame(canvas)
@@ -110,7 +111,7 @@ canvas.configure(yscrollcommand=scrollbar.set)
 canvas.pack(side="left", fill="both", expand=True)
 scrollbar.pack(side="right", fill="y")
 
-# --- Generate the fields ---
+#Generate the fields
 for table in tables:
     generate_fields_for_table(scroll_frame, table)
 
