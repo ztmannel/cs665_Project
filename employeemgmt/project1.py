@@ -40,6 +40,7 @@ tables = [
     "employee_personal_info",
     "compensation_table",
     "employee_company_info",
+    "badge_info"
     #"employee_time_off"    #we'll modify this after the employee has been added
 ]
 
