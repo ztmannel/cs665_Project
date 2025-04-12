@@ -5,7 +5,6 @@ employee management system interface
 import sqlite3
 import os
 import gui_functions
-import helper_functions
 
 db_path = "/home/zach/Documents/repos/cs665_Project/dbFiles/emp.db"
 db_schema = "/home/zach/Documents/repos/cs665_Project/dbFiles/create.sql"
@@ -33,7 +32,8 @@ for command in sqlCommands:
 #commits the changes to the db
 connection.commit()
 
-gui_functions.create_tab()
+#passing the path, connection, and cursor so dont need to continuously create
+gui_functions.create_tab(db_path, connection, cursor)
 #gui_build.modify_tab()
 #gui_build.lookup_tab()
 #gui_build.delete_tab()

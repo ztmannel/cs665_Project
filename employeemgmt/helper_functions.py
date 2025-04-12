@@ -24,11 +24,12 @@ def build_insert_statements(table_data):
     
     return statements, values
 
-def insert_all_data(conn, entry_widgets):
+def insert_all_data(connection, cursor, entry_widgets):
+    
     table_data = group_entries_by_table(entry_widgets)
     statements, values = build_insert_statements(table_data)
 
-    cursor = conn.cursor()
+    #cursor = conn.cursor()
     for sql, val in zip(statements, values):
         cursor.execute(sql, val)
-    conn.commit()
+    connection.commit()
