@@ -1,10 +1,11 @@
 import tkinter as tk
 import tkinter.messagebox as msgbox
-from tkinter import ttk #used for the notebook widget
+from tkinter import ttk
 import helper_functions
-import project1
+import sqlite3
+#import os
 
-def create_tab():
+def create_tab(db_path, connection, cursor):
     root = tk.Tk()
     root.title("Employee Manager")
     root.geometry("500x600")
@@ -23,14 +24,9 @@ def create_tab():
     label1 = ttk.Label(create_tab, text="Add a new employee")
     label1.pack(pady=20)
 
-    #Field definitions and entry points
     entry_widgets = {}
 
-    #Individual field lists
-    emp_personal_info_fields_id = [
-        "employee_id"
-    ]
-
+    # Field definitions without employee_id
     emp_personal_info_fields = [
         "first_name", "last_name", "position", "phone",
         "address", "city", "state", "country", "personal_email"
@@ -49,25 +45,19 @@ def create_tab():
         "badge_id", "activation_date", "deactivation_date"
     ]
 
-    #Build the static_fields dictionary using the variables
+    employee_time_off_fields = [
+        "hours_remaining", "hours_consumed", "total_annual_hours"
+    ]
+
     static_fields = {
-        "employee_id": emp_personal_info_fields_id,
-        "employee_personal_info": emp_personal_info_fields,
-        "compensation_table": compensation_table_fields,
-        "employee_company_info": emp_company_info_fields,
-        "badge_info": badge_info_fields
+        "Employee Personal Info": emp_personal_info_fields,
+        "Compensation Table": compensation_table_fields,
+        "Employee Company Info": emp_company_info_fields,
+        "Badge Info": badge_info_fields,
+        "Employee Time Off": employee_time_off_fields
     }
 
-    def generate_static_fields(parent_frame, table_name, fields):
-        ttk.Label(parent_frame, text=f"{table_name}", font=("Helvetica", 12, "bold")).pack(pady=(10, 0))
-        for field in fields:
-            label = ttk.Label(parent_frame, text=field)
-            label.pack()
-            entry = ttk.Entry(parent_frame)
-            entry.pack()
-            entry_widgets[f"{table_name}.{field}"] = entry
-
-    #Scrollable canvas
+    # Scrollable canvas
     canvas = tk.Canvas(create_tab)
     scrollbar = ttk.Scrollbar(create_tab, orient="vertical", command=canvas.yview)
     scroll_frame = ttk.Frame(canvas)
@@ -79,18 +69,48 @@ def create_tab():
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
-    #Generate fields for each table
+    # Single employee_id entry shown at the top
+    ttk.Label(scroll_frame, text="Employee ID", font=("Helvetica", 12, "bold")).pack(pady=(10, 0))
+    employee_id_entry = ttk.Entry(scroll_frame)
+    employee_id_entry.pack()
+
+    # Add one hidden employee_id entry for each table
+    for table_name in static_fields.keys():
+        hidden_entry = ttk.Entry(scroll_frame)
+        hidden_entry.pack_forget()
+        entry_widgets[f"{table_name}.employee_id"] = hidden_entry
+
+    # Field generator for visible fields
+    def generate_static_fields(parent_frame, table_name, fields):
+        ttk.Label(parent_frame, text=f"{table_name}", font=("Helvetica", 12, "bold")).pack(pady=(10, 0))
+        for field in fields:
+            label = ttk.Label(parent_frame, text=field)
+            label.pack()
+            entry = ttk.Entry(parent_frame)
+            entry.pack()
+            entry_widgets[f"{table_name}.{field}"] = entry
+
     for table_name, fields in static_fields.items():
         generate_static_fields(scroll_frame, table_name, fields)
-    
-    #Will insert the input data into the database
-    def on_submit(entry_widgets):
-        helper_functions.insert_all_data(project1.cursor, entry_widgets)
-        project1.connection.commit()
+
+    def on_submit():
+        employee_id = employee_id_entry.get()
+        #will pop a dialog for employee id
+        if not employee_id:
+            msgbox.showerror("Missing Info", "Employee ID is required.")
+            return
+
+        # Inject into all hidden fields
+        for key in entry_widgets:
+            if key.endswith(".employee_id"):
+                entry_widgets[key].delete(0, tk.END)
+                entry_widgets[key].insert(0, employee_id)
+
+        helper_functions.insert_all_data(connection, cursor, entry_widgets)
+        connection.commit()
         print("User Added Successfully")
 
-    #Basic submit button
-    submit_btn = ttk.Button(scroll_frame, text="Submit", command=lambda: print("Submit logic here"))
+    submit_btn = ttk.Button(scroll_frame, text="Submit", command=on_submit)
     submit_btn.pack(pady=20)
 
     root.mainloop()
