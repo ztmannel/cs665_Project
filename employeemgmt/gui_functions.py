@@ -268,6 +268,8 @@ def build_lookup_tab(parent, connection, cursor):
     badge_swipes_btn = ttk.Button(entry_frame, text="Show All Badge Swipes", command=show_all_badge_swipes)
     badge_swipes_btn.grid(row=0, column=4, padx=5)
 
+def build_delete_tab(parent, connection, cursor):
+
 #THIS IS THE MAIN SHELL FOR THE GUI
 def main_gui_shell(DB_PATH, connection, cursor):
     root = tk.Tk()
@@ -280,13 +282,15 @@ def main_gui_shell(DB_PATH, connection, cursor):
     create_frame = ttk.Frame(notebook)
     modify_frame = ttk.Frame(notebook)
     lookup_frame = ttk.Frame(notebook)
+    delete_frame = ttk.Frame(notebook)
     #tabs and names added here
     notebook.add(create_frame, text="Create")
     notebook.add(modify_frame, text="Modify")
     notebook.add(lookup_frame, text="Lookup")
+    notebook.add(lookup_frame, text="Delete")
 
     build_create_tab(create_frame, connection, cursor)
     build_modify_tab(modify_frame, connection, cursor)
     build_lookup_tab(lookup_frame, connection, cursor)
-    #build_delete_tab(lookup_frame, connection, cursor)
+    build_delete_tab(lookup_frame, connection, cursor)
     root.mainloop()
