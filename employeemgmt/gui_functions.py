@@ -5,7 +5,7 @@ import helper_functions
 import sqlite3
 #import os
 
-def create_tab(db_path, connection, cursor):
+def create_tab(DB_PATH, connection, cursor):
     root = tk.Tk()
     root.title("Employee Manager")
     root.geometry("500x600")
@@ -50,11 +50,11 @@ def create_tab(db_path, connection, cursor):
     ]
 
     static_fields = {
-        "Employee Personal Info": emp_personal_info_fields,
-        "Compensation Table": compensation_table_fields,
-        "Employee Company Info": emp_company_info_fields,
-        "Badge Info": badge_info_fields,
-        "Employee Time Off": employee_time_off_fields
+        "employee_personal_info": emp_personal_info_fields,
+        "compensation_table": compensation_table_fields,
+        "employee_company_info": emp_company_info_fields,
+        "badge_info": badge_info_fields,
+        "employee_time_off": employee_time_off_fields
     }
 
     # Scrollable canvas
@@ -99,8 +99,13 @@ def create_tab(db_path, connection, cursor):
         if not employee_id:
             msgbox.showerror("Missing Info", "Employee ID is required.")
             return
+        #check for existing employee_id. using ? will prevent sql injection via parameter
+        cursor.execute("SELECT 1 FROM employee_personal_info WHERE employee_id = ?", (employee_id,))
+        if cursor.fetchone():
+            msgbox.showerror("Invalid Entry", "Employee ID {employee_id} already exists")
+            return
 
-        # Inject into all hidden fields
+        #Inject into all hidden fields regardless of table name to prevent duplicate or conflicting inputs
         for key in entry_widgets:
             if key.endswith(".employee_id"):
                 entry_widgets[key].delete(0, tk.END)
