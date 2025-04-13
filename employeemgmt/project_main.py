@@ -1,6 +1,7 @@
 '''
 Zach Mannel
 employee management system interface
+#OPTIONAL TODO: move the field horizontal vs the pure vertical trash
 '''
 import sqlite3
 import os

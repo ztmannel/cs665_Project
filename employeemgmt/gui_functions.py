@@ -39,7 +39,7 @@ def build_create_tab(parent, connection, cursor):
         "employee_time_off": employee_time_off_fields
     }
 
-    # Scrollable canvas
+    #Scrollable canvas
     canvas = tk.Canvas(parent)
     scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
     scroll_frame = ttk.Frame(canvas)
@@ -51,7 +51,7 @@ def build_create_tab(parent, connection, cursor):
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
-    # Single employee_id entry shown at the top
+    #Single employee_id entry shown at the top
     ttk.Label(scroll_frame, text="Employee ID", font=("Helvetica", 12, "bold")).pack(pady=(10, 0))
     employee_id_entry = ttk.Entry(scroll_frame)
     employee_id_entry.pack()
@@ -82,38 +82,13 @@ def build_create_tab(parent, connection, cursor):
     clear_btn = ttk.Button(scroll_frame, text="Clear", command=lambda: help.clear_fields(employee_id_entry, entry_widgets, connection, cursor))
     clear_btn.pack(pady=(0, 10))
 
-def main_gui_shell(DB_PATH, connection, cursor):
-    root = tk.Tk()
-    root.title("Employee Manager")
-    root.geometry("600x700")
-
-    notebook = ttk.Notebook(root)
-    notebook.pack(expand=True, fill="both")
-
-    create_frame = ttk.Frame(notebook)
-    modify_frame = ttk.Frame(notebook)
-    lookup_frame = ttk.Frame(notebook)
-
-    notebook.add(create_frame, text="Create")
-    notebook.add(modify_frame, text="Modify")
-    notebook.add(lookup_frame, text="Lookup")
-
-    build_create_tab(create_frame, connection, cursor)
-    #populate_modify_tab(modify_frame, connection, cursor)
-    # populate_lookup_tab(lookup_frame, connection, cursor)  # optional
-
-    root.mainloop()
-
-def modify_tab(DB_PATH, connection, cursor):
-    modify_frame = ttk.Frame(notebook)
-    notebook.add(modify_frame, text='Modify')
-    
-    label1 = ttk.Label(modify_frame, text="Modify Employee Info")
+def build_modify_tab(parent, connection, cursor):
+    label1 = ttk.Label(parent, text="Modify Employee Info")
     label1.pack(pady=20)
     
-    #Entry for Employee ID to search for an employee
-    ttk.Label(modify_frame, text="Enter Employee ID").pack(pady=(10, 0))
-    employee_id_entry = ttk.Entry(modify_frame)
+    #Enter Employee ID to search for an employee
+    ttk.Label(parent, text="Enter Employee ID").pack(pady=(10, 0))
+    employee_id_entry = ttk.Entry(parent)
     employee_id_entry.pack(pady=(5, 10))
     
     #Button to trigger search
@@ -132,15 +107,15 @@ def modify_tab(DB_PATH, connection, cursor):
         
         #Fill the fields with the data of the employee
         first_name_entry.delete(0, tk.END)
-        first_name_entry.insert(0, employee[1])  # Assuming the first name is in index 1
+        first_name_entry.insert(0, employee[1])  #Assuming the first name is in index 1
 
         #Similarly fill all other fields:
         last_name_entry.delete(0, tk.END)
-        last_name_entry.insert(0, employee[2])  # Last name at index 2
+        last_name_entry.insert(0, employee[2])  #Last name at index 2
         
         #Continue this for all fields you want to modify...
 
-    search_btn = ttk.Button(modify_frame, text="Search Employee", command=search_employee)
+    search_btn = ttk.Button(parent, text="Search Employee", command=search_employee)
     search_btn.pack(pady=(5, 10))
     
     #Display Fields to Modify (Assuming employee info fields)
@@ -159,7 +134,7 @@ def modify_tab(DB_PATH, connection, cursor):
         
         #Similarly add other fields like position, phone, etc...
         
-    generate_modify_fields(modify_frame)
+    generate_modify_fields(parent)
     
     #Save changes back to the database
     def update_employee():
@@ -189,5 +164,28 @@ def modify_tab(DB_PATH, connection, cursor):
         connection.commit()
         msgbox.showinfo("Success", "Employee information updated successfully.")
     
-    save_btn = ttk.Button(modify_frame, text="Save Changes", command=update_employee)
+    save_btn = ttk.Button(parent, text="Save Changes", command=update_employee)
     save_btn.pack(pady=(10, 20))
+
+#THIS IS THE MAIN SHELL FOR THE GUI
+def main_gui_shell(DB_PATH, connection, cursor):
+    root = tk.Tk()
+    root.title("Employee Manager")
+    root.geometry("1400x1000")
+
+    notebook = ttk.Notebook(root)
+    notebook.pack(expand=True, fill="both")
+    #creates the frames for tabs
+    create_frame = ttk.Frame(notebook)
+    modify_frame = ttk.Frame(notebook)
+    lookup_frame = ttk.Frame(notebook)
+    #tabs and names added here
+    notebook.add(create_frame, text="Create")
+    notebook.add(modify_frame, text="Modify")
+    notebook.add(lookup_frame, text="Lookup")
+
+    build_create_tab(create_frame, connection, cursor)
+    build_modify_tab(modify_frame, connection, cursor)
+    # populate_lookup_tab(lookup_frame, connection, cursor)  # optional
+
+    root.mainloop()
