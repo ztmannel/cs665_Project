@@ -61,7 +61,7 @@ def on_submit(employee_id_entry, entry_widgets, connection, cursor):
     connection.commit()
     print("User Added Successfully")
 
-def clear_fields(employee_id_entry, entry_widgets, connection, cursor):
+def clear_fields(employee_id_entry, entry_widgets):
     for widget in entry_widgets.values():
         widget.delete(0, tk.END)
     employee_id_entry.delete(0, tk.END)
