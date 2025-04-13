@@ -6,11 +6,11 @@ INSERT INTO employee_personal_info (employee_id, first_name, last_name, position
 ('9358', 'Georgia', 'Robins', 'Developer', '555-555-5004', '735 W Hickory', 'Wichita', 'KS', 'USA', 'grobins@email.com');
 
 INSERT INTO badge_info (employee_id, badge_id, activation_date, deactivation_date) VALUES
-('3052', '1', '05032025', 'NULL'),
-('1125', '2', '05032025', 'NULL'),
-('7590', '3', '10032025', 'NULL'),
-('3690', '4', '27032025', 'NULL'),
-('9358', '5', '05032025', 'NULL');
+('3052', '1', '05032025', NULL),
+('1125', '2', '05032025', NULL),
+('7590', '3', '10032025', NULL),
+('3690', '4', '27032025', NULL),
+('9358', '5', '05032025', NULL);
 
 INSERT INTO compensation_table (employee_id, salary, bonus, salary_set_date) VALUES
 ('3052', '120000', '6000', '10032025'),
@@ -27,11 +27,11 @@ INSERT INTO badge_sign_in_times (badge_id, date_scanned, time_scanned) VALUES
 ('4', '27032025', '0900');
 
 INSERT INTO employee_company_info (employee_id, company_email, department, manager_emp_id, hire_date, termination_date) VALUES
-('3052', 'j.jones@company.com', 'CEO', 'NULL', '05032025', 'NULL'),
-('1125', 'j.dean@company.com', 'Software', '3052', '05032025', 'NULL'),
-('7590', 'f.penn@company.com', 'Software', '1125', '10032025', 'NULL'),
-('3690', 'j.little@company.com', 'Software', '1125', '27032025', 'NULL'),
-('9358', 'g.robins@company.com', 'Development', '1125', '05032025', 'NULL');
+('3052', 'j.jones@company.com', 'CEO', NULL, '05032025', NULL),
+('1125', 'j.dean@company.com', 'Software', '3052', '05032025', NULL),
+('7590', 'f.penn@company.com', 'Software', '1125', '10032025', NULL),
+('3690', 'j.little@company.com', 'Software', '1125', '27032025', NULL),
+('9358', 'g.robins@company.com', 'Development', '1125', '05032025', NULL);
 
 INSERT INTO employee_time_off (employee_id, hours_remaining, hours_consumed, total_annual_hours) VALUES
 ('3052', '104', '16', '120'),
