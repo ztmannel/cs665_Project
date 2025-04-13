@@ -35,7 +35,7 @@ connection.commit()
 
 #passing the path, connection, and cursor so dont need to continuously create
 gui_functions.create_tab(DB_PATH, connection, cursor)
-#gui_build.modify_tab()
+gui_functions.modify_tab(DB_PATH, connection, cursor)
 #gui_build.lookup_tab()
 #gui_build.delete_tab()
 

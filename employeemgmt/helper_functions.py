@@ -1,8 +1,10 @@
-#This file will contain various helper functions
+#This file contains various helper functions
 
 from collections import defaultdict
 import sqlite3
+import tkinter as tk
 
+#creates the table_data so we can build the sql statements
 def group_entries_by_table(entry_widgets):
     table_data = defaultdict(dict)
     for key, widget in entry_widgets.items():
@@ -10,6 +12,7 @@ def group_entries_by_table(entry_widgets):
         table_data[table_name][field_name] = widget.get()
     return table_data
 
+#builds the insert statements based on the input fields
 def build_insert_statements(table_data):
     statements = []
     values = []
@@ -24,6 +27,7 @@ def build_insert_statements(table_data):
     
     return statements, values
 
+#inserts the input data to sql
 def insert_all_data(connection, cursor, entry_widgets):
     
     table_data = group_entries_by_table(entry_widgets)
@@ -33,3 +37,31 @@ def insert_all_data(connection, cursor, entry_widgets):
     for sql, val in zip(statements, values):
         cursor.execute(sql, val)
     connection.commit()
+
+#controls the functionality of the submit button
+def on_submit(employee_id_entry, entry_widgets, connection, cursor):
+    employee_id = employee_id_entry.get()
+    #will pop a dialog for employee id
+    if not employee_id:
+        msgbox.showerror("Missing Info", "Employee ID is required.")
+        return
+    #check for existing employee_id. using ? will prevent sql injection via parameter
+    cursor.execute("SELECT 1 FROM employee_personal_info WHERE employee_id = ?", (employee_id,))
+    if cursor.fetchone():
+        msgbox.showerror("Invalid Entry", f"Employee ID {employee_id} already exists")
+        return
+
+    #Inject into all hidden fields regardless of table name to prevent duplicate or conflicting inputs
+    for key in entry_widgets:
+        if key.endswith(".employee_id"):
+            entry_widgets[key].delete(0, tk.END)
+            entry_widgets[key].insert(0, employee_id)
+
+    insert_all_data(connection, cursor, entry_widgets)
+    connection.commit()
+    print("User Added Successfully")
+
+def clear_fields(employee_id_entry, entry_widgets, connection, cursor):
+    for widget in entry_widgets.values():
+        widget.delete(0, tk.END)
+    employee_id_entry.delete(0, tk.END)
