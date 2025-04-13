@@ -209,86 +209,12 @@ def build_lookup_tab(parent, connection, cursor):
     label = ttk.Label(parent, text="Lookup Employee Info")
     label.pack(pady=10)
 
-    # Employee ID input
     entry_frame = ttk.Frame(parent)
     entry_frame.pack(pady=(5, 10))
 
     ttk.Label(entry_frame, text="Enter Employee ID:").grid(row=0, column=0, padx=5)
     employee_id_entry = ttk.Entry(entry_frame)
     employee_id_entry.grid(row=0, column=1, padx=5)
-
-    # Search Button
-    search_btn = ttk.Button(entry_frame, text="Search", command=lambda: search_employee(employee_id_entry.get()))
-    search_btn.grid(row=0, column=2, padx=5)
-
-    # Scrollable canvas setup
-    canvas = tk.Canvas(parent, height=400)
-    scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
-    scrollable_frame = ttk.Frame(canvas)
-
-    scrollable_frame.bind(
-        "<Configure>",
-        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-    )
-
-    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-    canvas.configure(yscrollcommand=scrollbar.set)
-
-    canvas.pack(side="left", fill="both", expand=True)
-    scrollbar.pack(side="right", fill="y")
-
-    def search_employee(employee_id):
-        for widget in scrollable_frame.winfo_children():
-            widget.destroy()
-
-        if not employee_id:
-            msgbox.showerror("Missing Info", "Employee ID is required.")
-            return
-
-        def fetch_and_display(table_name, fields, key_col="employee_id"):
-            cursor.execute(f"SELECT * FROM {table_name} WHERE {key_col} = ?", (employee_id,))
-            record = cursor.fetchone()
-            if not record:
-                return
-
-            ttk.Label(scrollable_frame, text=f"{table_name.replace('_', ' ').title()}",
-                      font=("Helvetica", 12, "bold")).pack(pady=(10, 5))
-
-            for idx, field in enumerate(fields, start=1):
-                label = ttk.Label(scrollable_frame, text=field.replace('_', ' ').title())
-                label.pack()
-                entry = ttk.Entry(scrollable_frame)
-                entry.insert(0, record[idx])
-                entry.config(state="readonly")
-                entry.pack()
-
-        # Primary table
-        personal_fields = [
-            "first_name", "last_name", "position", "phone",
-            "address", "city", "state", "country", "personal_email"
-        ]
-        cursor.execute("SELECT * FROM employee_personal_info WHERE employee_id = ?", (employee_id,))
-        employee = cursor.fetchone()
-        if not employee:
-            msgbox.showerror("Not Found", f"Employee ID {employee_id} not found.")
-            return
-
-        ttk.Label(scrollable_frame, text="Employee Personal Info",
-                  font=("Helvetica", 12, "bold")).pack(pady=(10, 5))
-
-        for idx, field in enumerate(personal_fields, start=1):
-            label = ttk.Label(scrollable_frame, text=field.replace('_', ' ').title())
-            label.pack()
-            entry = ttk.Entry(scrollable_frame)
-            entry.insert(0, employee[idx])
-            entry.config(state="readonly")
-            entry.pack()
-
-        # Additional tables
-        fetch_and_display("badge_info", ["badge_id", "activation_date", "deactivation_date"])
-        fetch_and_display("compensation_table", ["salary", "bonus", "salary_set_date"])
-        fetch_and_display("employee_company_info", ["company_email", "department", "manager_emp_id", "hire_date", "termination_date"])
-        fetch_and_display("employee_time_off", ["hours_remaining", "hours_consumed", "total_annual_hours"])
 
     def list_all_employee_ids():
         cursor.execute("SELECT employee_id FROM employee_personal_info ORDER BY employee_id")
@@ -297,7 +223,6 @@ def build_lookup_tab(parent, connection, cursor):
             msgbox.showinfo("No Records", "No employee records found.")
             return
 
-        # Display IDs in a new top-level window
         top = tk.Toplevel()
         top.title("All Employee IDs")
 
@@ -306,10 +231,42 @@ def build_lookup_tab(parent, connection, cursor):
 
         for (emp_id,) in ids:
             listbox.insert(tk.END, emp_id)
-    
-    # List All IDs Button
+
+    def show_all_badge_swipes():
+        cursor.execute("""
+            SELECT first_name, last_name, date_scanned, time_scanned
+            FROM employee_personal_info p
+            JOIN badge_info b ON p.employee_id = b.employee_id
+            JOIN badge_sign_in_times bst ON b.badge_id = bst.badge_id
+            ORDER BY date_scanned DESC, time_scanned DESC
+        """)
+        records = cursor.fetchall()
+        if not records:
+            msgbox.showinfo("No Records", "No badge swipes found.")
+            return
+
+        top = tk.Toplevel()
+        top.title("All Badge Swipes")
+
+        tree = ttk.Treeview(top, columns=("first", "last", "date", "time"), show="headings")
+        tree.heading("first", text="First Name")
+        tree.heading("last", text="Last Name")
+        tree.heading("date", text="Date Scanned")
+        tree.heading("time", text="Time Scanned")
+        tree.pack(fill="both", expand=True, padx=10, pady=10)
+
+        for row in records:
+            tree.insert("", tk.END, values=row)
+
+    # Buttons
+    search_btn = ttk.Button(entry_frame, text="Search", command=lambda: search_employee(employee_id_entry.get()))
+    search_btn.grid(row=0, column=2, padx=5)
+
     list_ids_btn = ttk.Button(entry_frame, text="List All Employee IDs", command=list_all_employee_ids)
     list_ids_btn.grid(row=0, column=3, padx=5)
+
+    badge_swipes_btn = ttk.Button(entry_frame, text="Show All Badge Swipes", command=show_all_badge_swipes)
+    badge_swipes_btn.grid(row=0, column=4, padx=5)
 
 #THIS IS THE MAIN SHELL FOR THE GUI
 def main_gui_shell(DB_PATH, connection, cursor):
