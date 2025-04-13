@@ -8,9 +8,6 @@ import os
 import gui_functions
 from conf.config import DB_PATH, DB_SCHEMA
 
-#db_path = DB_PATH
-#db_schema = DB_SCHEMA
-
 #check if db has been created
 db_file_check = os.path.exists(DB_PATH)
 
@@ -36,6 +33,5 @@ connection.commit()
 
 #passing the path, connection, and cursor so dont need to continuously create
 gui_functions.main_gui_shell(DB_PATH, connection, cursor)
-#gui_build.delete_tab()
 
 connection.close()
