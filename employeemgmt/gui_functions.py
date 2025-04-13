@@ -269,6 +269,50 @@ def build_lookup_tab(parent, connection, cursor):
     badge_swipes_btn.grid(row=0, column=4, padx=5)
 
 def build_delete_tab(parent, connection, cursor):
+    label = ttk.Label(parent, text="Delete Employee Record")
+    label.pack(pady=10)
+
+    entry_frame = ttk.Frame(parent)
+    entry_frame.pack(pady=(5, 10))
+
+    ttk.Label(entry_frame, text="Enter Employee ID:").grid(row=0, column=0, padx=5)
+    employee_id_entry = ttk.Entry(entry_frame)
+    employee_id_entry.grid(row=0, column=1, padx=5)
+
+    def delete_employee():
+        employee_id = employee_id_entry.get()
+        if not employee_id:
+            msgbox.showerror("Missing Info", "Employee ID is required.")
+            return
+
+        # Confirm deletion
+        confirm = msgbox.askyesno("Confirm Deletion", f"Are you sure you want to delete Employee ID {employee_id}? This action cannot be undone.")
+        if not confirm:
+            return
+
+        try:
+            # Get badge_id if it exists (used for badge_sign_in_times)
+            cursor.execute("SELECT badge_id FROM badge_info WHERE employee_id = ?", (employee_id,))
+            badge_row = cursor.fetchone()
+            badge_id = badge_row[0] if badge_row else None
+
+            # Delete in reverse dependency order
+            if badge_id:
+                cursor.execute("DELETE FROM badge_sign_in_times WHERE badge_id = ?", (badge_id,))
+            cursor.execute("DELETE FROM badge_info WHERE employee_id = ?", (employee_id,))
+            cursor.execute("DELETE FROM compensation_table WHERE employee_id = ?", (employee_id,))
+            cursor.execute("DELETE FROM employee_company_info WHERE employee_id = ?", (employee_id,))
+            cursor.execute("DELETE FROM employee_time_off WHERE employee_id = ?", (employee_id,))
+            cursor.execute("DELETE FROM employee_personal_info WHERE employee_id = ?", (employee_id,))
+
+            connection.commit()
+            msgbox.showinfo("Success", f"Employee ID {employee_id} and related records were deleted.")
+            employee_id_entry.delete(0, tk.END)
+        except Exception as e:
+            msgbox.showerror("Error", f"Failed to delete employee.\n{str(e)}")
+
+    delete_btn = ttk.Button(entry_frame, text="Delete Employee", command=delete_employee)
+    delete_btn.grid(row=0, column=2, padx=10)
 
 #THIS IS THE MAIN SHELL FOR THE GUI
 def main_gui_shell(DB_PATH, connection, cursor):
@@ -283,14 +327,15 @@ def main_gui_shell(DB_PATH, connection, cursor):
     modify_frame = ttk.Frame(notebook)
     lookup_frame = ttk.Frame(notebook)
     delete_frame = ttk.Frame(notebook)
+
     #tabs and names added here
     notebook.add(create_frame, text="Create")
     notebook.add(modify_frame, text="Modify")
     notebook.add(lookup_frame, text="Lookup")
-    notebook.add(lookup_frame, text="Delete")
+    notebook.add(delete_frame, text="Delete")
 
     build_create_tab(create_frame, connection, cursor)
     build_modify_tab(modify_frame, connection, cursor)
     build_lookup_tab(lookup_frame, connection, cursor)
-    build_delete_tab(lookup_frame, connection, cursor)
+    build_delete_tab(delete_frame, connection, cursor)
     root.mainloop()
