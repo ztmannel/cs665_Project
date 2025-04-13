@@ -100,20 +100,44 @@ def build_modify_tab(parent, connection, cursor):
         
         cursor.execute("SELECT * FROM employee_personal_info WHERE employee_id = ?", (employee_id,))
         employee = cursor.fetchone()
-        
+
         if not employee:
             msgbox.showerror("Not Found", f"Employee ID {employee_id} not found.")
             return
-        
-        #Fill the fields with the data of the employee
-        first_name_entry.delete(0, tk.END)
-        first_name_entry.insert(0, employee[1])  #Assuming the first name is in index 1
 
-        #Similarly fill all other fields:
-        last_name_entry.delete(0, tk.END)
-        last_name_entry.insert(0, employee[2])  #Last name at index 2
+        #Create the entry widgets dynamically
+        first_name = ttk.Entry(parent)
+        last_name = ttk.Entry(parent)
+        position = ttk.Entry(parent)
+        phone = ttk.Entry(parent)
+        address = ttk.Entry(parent)
+        city = ttk.Entry(parent)
+        state = ttk.Entry(parent)
+        country = ttk.Entry(parent)
+        personal_email = ttk.Entry(parent)
+
+        #Map field names to their respective indices
+        field_map = {
+            "first_name": (first_name, 1),
+            "last_name": (last_name, 2),
+            "position": (position, 3),
+            "phone": (phone, 4),
+            "address": (address, 5),
+            "city": (city, 6),
+            "state": (state, 7),
+            "country": (country, 8),
+            "personal_email": (personal_email, 9)
+        }
+
+        #Loop through each entry widget and fill corresponding value
+        for field_name, (entry_widget, index) in field_map.items():
+            entry_widget.delete(0, tk.END)
+            entry_widget.insert(0, employee[index])
         
-        #Continue this for all fields you want to modify...
+        generate_modify_fields(parent, field_map)
+
+        save_btn = ttk.Button(parent, text="Save Changes", command=lambda: update_employee(field_map))
+        save_btn.pack(pady=(10, 20))
 
     search_btn = ttk.Button(parent, text="Search Employee", command=search_employee)
     search_btn.pack(pady=(5, 10))
@@ -121,23 +145,14 @@ def build_modify_tab(parent, connection, cursor):
     #Display Fields to Modify (Assuming employee info fields)
     #These fields are where the user will modify data
 
-    def generate_modify_fields(parent_frame):
-        global first_name_entry, last_name_entry
-        
-        ttk.Label(parent_frame, text="First Name").pack(pady=(5, 0))
-        first_name_entry = ttk.Entry(parent_frame)
-        first_name_entry.pack(pady=(5, 10))
-        
-        ttk.Label(parent_frame, text="Last Name").pack(pady=(5, 0))
-        last_name_entry = ttk.Entry(parent_frame)
-        last_name_entry.pack(pady=(5, 10))
-        
-        #Similarly add other fields like position, phone, etc...
-        
-    generate_modify_fields(parent)
+    def generate_modify_fields(parent_frame, field_map):
+        for field_name, (entry_widget, _) in field_map.items():
+            label = ttk.Label(parent_frame, text=field_name.replace('_', ' ').title())
+            label.pack(pady=(5, 0))
+            entry_widget.pack(pady=(5, 10))
     
     #Save changes back to the database
-    def update_employee():
+    def update_employee(field_map):
         employee_id = employee_id_entry.get()
         if not employee_id:
             msgbox.showerror("Missing Info", "Employee ID is required.")
@@ -148,24 +163,27 @@ def build_modify_tab(parent, connection, cursor):
             msgbox.showerror("Not Found", f"Employee ID {employee_id} not found.")
             return
         
-        #Collect the modified values from the fields
-        first_name = first_name_entry.get()
-        last_name = last_name_entry.get()
-        
-        #Add other fields like position, phone, etc...
-        
+        #Use [0] to access the entry widget in each tuple
+        first_name = field_map["first_name"][0].get()
+        last_name = field_map["last_name"][0].get()
+        position = field_map["position"][0].get()
+        phone = field_map["phone"][0].get()
+        address = field_map["address"][0].get()
+        city = field_map["city"][0].get()
+        state = field_map["state"][0].get()
+        country = field_map["country"][0].get()
+        personal_email = field_map["personal_email"][0].get()
+
         #Update the employee in the database
         cursor.execute("""
             UPDATE employee_personal_info
-            SET first_name = ?, last_name = ?
+            SET first_name = ?, last_name = ?, position = ?, phone = ?, address = ?, city = ?, state = ?, country = ?, personal_email = ?
             WHERE employee_id = ?
-        """, (first_name, last_name, employee_id))
+        """, (first_name, last_name, position, phone, address, city, state, country, personal_email, employee_id))
         
         connection.commit()
         msgbox.showinfo("Success", "Employee information updated successfully.")
     
-    save_btn = ttk.Button(parent, text="Save Changes", command=update_employee)
-    save_btn.pack(pady=(10, 20))
 
 #THIS IS THE MAIN SHELL FOR THE GUI
 def main_gui_shell(DB_PATH, connection, cursor):
