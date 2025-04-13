@@ -84,109 +84,126 @@ def build_create_tab(parent, connection, cursor):
 
 def build_modify_tab(parent, connection, cursor):
     label1 = ttk.Label(parent, text="Modify Employee Info")
-    label1.pack(pady=20)
-    
-    #Enter Employee ID to search for an employee
-    ttk.Label(parent, text="Enter Employee ID").pack(pady=(10, 0))
-    employee_id_entry = ttk.Entry(parent)
-    employee_id_entry.pack(pady=(5, 10))
-    
-    #Button to trigger search
-    def search_employee():
-        employee_id = employee_id_entry.get()
+    label1.pack(pady=10)
+
+    #Employee ID search section
+    entry_frame = ttk.Frame(parent)
+    entry_frame.pack(pady=(5, 10))
+
+    ttk.Label(entry_frame, text="Enter Employee ID:").grid(row=0, column=0, padx=5)
+    employee_id_entry = ttk.Entry(entry_frame)
+    employee_id_entry.grid(row=0, column=1, padx=5)
+
+    #Search Employee button
+    search_btn = ttk.Button(entry_frame, text="Search Employee", command=lambda: search_employee(employee_id_entry.get()))
+    search_btn.grid(row=1, column=0, columnspan=2, pady=(5, 10))
+
+    #Scrollable canvas setup
+    canvas = tk.Canvas(parent, height=400)
+    scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
+    scrollable_frame = ttk.Frame(canvas)
+
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+    )
+
+    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    canvas.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
+
+    def search_employee(employee_id):
+        for widget in scrollable_frame.winfo_children():
+            widget.destroy()
+
         if not employee_id:
             msgbox.showerror("Missing Info", "Employee ID is required.")
             return
-        
+
+        field_map = {}
+
+        def fetch_and_generate_fields(table_name, fields, key_col="employee_id"):
+            cursor.execute(f"SELECT * FROM {table_name} WHERE {key_col} = ?", (employee_id,))
+            record = cursor.fetchone()
+            if not record:
+                return
+
+            for idx, field in enumerate(fields, start=1):
+                entry_widget = ttk.Entry(scrollable_frame)
+                entry_widget.insert(0, record[idx])
+                field_map[f"{table_name}.{field}"] = (entry_widget, idx)
+
+        #Fetch main table
+        personal_fields = [
+            "first_name", "last_name", "position", "phone",
+            "address", "city", "state", "country", "personal_email"
+        ]
         cursor.execute("SELECT * FROM employee_personal_info WHERE employee_id = ?", (employee_id,))
         employee = cursor.fetchone()
-
         if not employee:
             msgbox.showerror("Not Found", f"Employee ID {employee_id} not found.")
             return
 
-        #Create the entry widgets dynamically
-        first_name = ttk.Entry(parent)
-        last_name = ttk.Entry(parent)
-        position = ttk.Entry(parent)
-        phone = ttk.Entry(parent)
-        address = ttk.Entry(parent)
-        city = ttk.Entry(parent)
-        state = ttk.Entry(parent)
-        country = ttk.Entry(parent)
-        personal_email = ttk.Entry(parent)
+        for idx, field in enumerate(personal_fields, start=1):
+            entry_widget = ttk.Entry(scrollable_frame)
+            entry_widget.insert(0, employee[idx])
+            field_map[f"employee_personal_info.{field}"] = (entry_widget, idx)
 
-        #Map field names to their respective indices
-        fields = [
-            ("first_name", 1),
-            ("last_name", 2),
-            ("position", 3),
-            ("phone", 4),
-            ("address", 5),
-            ("city", 6),
-            ("state", 7),
-            ("country", 8),
-            ("personal_email", 9)
-        ]
+        #Additional tables
+        fetch_and_generate_fields("badge_info", ["badge_id", "activation_date", "deactivation_date"])
+        fetch_and_generate_fields("compensation_table", ["salary", "bonus", "salary_set_date"])
+        fetch_and_generate_fields("employee_company_info", ["company_email", "department", "manager_emp_id", "hire_date", "termination_date"])
+        fetch_and_generate_fields("employee_time_off", ["hours_remaining", "hours_consumed", "total_annual_hours"])
 
-        field_map = {}
+        generate_modify_fields(scrollable_frame, field_map)
 
-        #Loop through each entry widget and fill corresponding value
-        for field_name, index in fields:
-            entry_widget = ttk.Entry(parent)
-            entry_widget.insert(0, employee[index])
-            field_map[field_name] = (entry_widget, index)
-        
-        generate_modify_fields(parent, field_map)
+        save_btn = ttk.Button(scrollable_frame, text="Save Changes", command=lambda: update_employee(field_map))
+        save_btn.grid(column=0, row=len(field_map)+1, columnspan=2, pady=(20, 10))
 
-        save_btn = ttk.Button(parent, text="Save Changes", command=lambda: update_employee(field_map))
-        save_btn.pack(pady=(10, 20))
-
-    search_btn = ttk.Button(parent, text="Search Employee", command=search_employee)
-    search_btn.pack(pady=(5, 10))
+    def generate_modify_fields(frame, field_map):
+        for row_idx, (field_name, (entry_widget, _)) in enumerate(field_map.items()):
+            label_text = field_name.split('.')[-1].replace('_', ' ').title()
+            label = ttk.Label(frame, text=label_text)
+            label.grid(row=row_idx, column=0, sticky="e", padx=10, pady=5)
+            entry_widget.grid(row=row_idx, column=1, sticky="w", padx=10, pady=5)
     
-    #Display Fields to Modify (Assuming employee info fields)
-    #These fields are where the user will modify data
-
-    def generate_modify_fields(parent_frame, field_map):
-        for field_name, (entry_widget, _) in field_map.items():
-            label = ttk.Label(parent_frame, text=field_name.replace('_', ' ').title())
-            label.pack(pady=(5, 0))
-            entry_widget.pack(pady=(5, 10))
-    
-    #Save changes back to the database
+    #This section is responsible for running the sql update queries
     def update_employee(field_map):
         employee_id = employee_id_entry.get()
         if not employee_id:
             msgbox.showerror("Missing Info", "Employee ID is required.")
             return
-        
+
         cursor.execute("SELECT 1 FROM employee_personal_info WHERE employee_id = ?", (employee_id,))
         if not cursor.fetchone():
             msgbox.showerror("Not Found", f"Employee ID {employee_id} not found.")
             return
-        
-        #Use [0] to access the entry widget in each tuple
-        first_name = field_map["first_name"][0].get()
-        last_name = field_map["last_name"][0].get()
-        position = field_map["position"][0].get()
-        phone = field_map["phone"][0].get()
-        address = field_map["address"][0].get()
-        city = field_map["city"][0].get()
-        state = field_map["state"][0].get()
-        country = field_map["country"][0].get()
-        personal_email = field_map["personal_email"][0].get()
 
-        #Update the employee in the database
-        cursor.execute("""
-            UPDATE employee_personal_info
-            SET first_name = ?, last_name = ?, position = ?, phone = ?, address = ?, city = ?, state = ?, country = ?, personal_email = ?
-            WHERE employee_id = ?
-        """, (first_name, last_name, position, phone, address, city, state, country, personal_email, employee_id))
-        
+        updates = {
+            "employee_personal_info": [],
+            "badge_info": [],
+            "compensation_table": [],
+            "employee_company_info": [],
+            "employee_time_off": []
+        }
+
+        for full_key, (entry_widget, _) in field_map.items():
+            table, field = full_key.split('.')
+            updates[table].append((field, entry_widget.get()))
+
+        for table, fields in updates.items():
+            if not fields:
+                continue
+            set_clause = ", ".join([f"{field} = ?" for field, _ in fields])
+            values = [value for _, value in fields]
+            where_key = "badge_id" if table == "badge_info" else "employee_id"
+            values.append(employee_id)
+            cursor.execute(f"UPDATE {table} SET {set_clause} WHERE {where_key} = ?", values)
+
         connection.commit()
         msgbox.showinfo("Success", "Employee information updated successfully.")
-    
 
 #THIS IS THE MAIN SHELL FOR THE GUI
 def main_gui_shell(DB_PATH, connection, cursor):
@@ -207,6 +224,6 @@ def main_gui_shell(DB_PATH, connection, cursor):
 
     build_create_tab(create_frame, connection, cursor)
     build_modify_tab(modify_frame, connection, cursor)
-    # populate_lookup_tab(lookup_frame, connection, cursor)  # optional
+#    build_lookup_tab(lookup_frame, connection, cursor)
 
     root.mainloop()
