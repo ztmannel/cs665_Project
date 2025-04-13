@@ -1,4 +1,4 @@
-#This file contains various helper functions
+#This file contains various helper functions. I could move more from the gui_functions.py, but time constraints. see on_submit for example
 
 from collections import defaultdict
 import sqlite3

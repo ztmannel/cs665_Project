@@ -3,12 +3,14 @@ import tkinter.messagebox as msgbox
 from tkinter import ttk
 import helper_functions as help
 import sqlite3
+import csv
+from tkinter import filedialog
 
 def build_create_tab(parent, connection, cursor):
 
     entry_widgets = {}
 
-    # Field definitions without employee_id
+    #Field definitions not including employee_id - do that separately 
     emp_personal_info_fields = [
         "first_name", "last_name", "position", "phone",
         "address", "city", "state", "country", "personal_email"
@@ -56,13 +58,13 @@ def build_create_tab(parent, connection, cursor):
     employee_id_entry = ttk.Entry(scroll_frame)
     employee_id_entry.pack()
 
-    # Add one hidden employee_id entry for each table
+    #Add one hidden employee_id entry for each table
     for table_name in static_fields.keys():
         hidden_entry = ttk.Entry(scroll_frame)
         hidden_entry.pack_forget()
         entry_widgets[f"{table_name}.employee_id"] = hidden_entry
 
-    # Field generator for visible fields
+    #Field generator for visible fields
     def generate_static_fields(parent_frame, table_name, fields):
         ttk.Label(parent_frame, text=f"{table_name}", font=("Helvetica", 12, "bold")).pack(pady=(10, 0))
         for field in fields:
@@ -121,7 +123,7 @@ def build_modify_tab(parent, connection, cursor):
         if not employee_id:
             msgbox.showerror("Missing Info", "Employee ID is required.")
             return
-
+        #this map will store the values from the select queries
         field_map = {}
 
         def fetch_and_generate_fields(table_name, fields, key_col="employee_id"):
@@ -135,7 +137,7 @@ def build_modify_tab(parent, connection, cursor):
                 entry_widget.insert(0, record[idx])
                 field_map[f"{table_name}.{field}"] = (entry_widget, idx)
 
-        #Fetch main table
+        #Fetch main table - employee personal info
         personal_fields = [
             "first_name", "last_name", "position", "phone",
             "address", "city", "state", "country", "personal_email"
@@ -258,7 +260,62 @@ def build_lookup_tab(parent, connection, cursor):
         for row in records:
             tree.insert("", tk.END, values=row)
 
-    # Buttons
+    def export_to_csv():
+        emp_id = employee_id_entry.get().strip()
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV Files", "*.csv")],
+            title="Save As"
+        )
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, mode='w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+
+                def write_section(header, query, params=()):
+                    writer.writerow([header])
+                    cursor.execute(query, params)
+                    rows = cursor.fetchall()
+                    if not rows:
+                        writer.writerow(["No data"])
+                        writer.writerow([])
+                        return
+                    columns = [desc[0] for desc in cursor.description]
+                    writer.writerow(columns)
+                    writer.writerows(rows)
+                    writer.writerow([])  #spacing row
+
+                if emp_id:
+                    #Export for a single employee
+                    write_section("Employee Personal Info", "SELECT * FROM employee_personal_info WHERE employee_id = ?", (emp_id,))
+                    write_section("Badge Info", "SELECT * FROM badge_info WHERE employee_id = ?", (emp_id,))
+                    write_section("Compensation Table", "SELECT * FROM compensation_table WHERE employee_id = ?", (emp_id,))
+                    write_section("Employee Company Info", "SELECT * FROM employee_company_info WHERE employee_id = ?", (emp_id,))
+                    write_section("Employee Time Off", "SELECT * FROM employee_time_off WHERE employee_id = ?", (emp_id,))
+
+                    #Get badge_id and sign-in times
+                    cursor.execute("SELECT badge_id FROM badge_info WHERE employee_id = ?", (emp_id,))
+                    badge = cursor.fetchone()
+                    if badge:
+                        badge_id = badge[0]
+                        write_section("Badge Sign In Times", "SELECT * FROM badge_sign_in_times WHERE badge_id = ?", (badge_id,))
+                else:
+                    #Export for all employees
+                    write_section("Employee Personal Info", "SELECT * FROM employee_personal_info")
+                    write_section("Badge Info", "SELECT * FROM badge_info")
+                    write_section("Compensation Table", "SELECT * FROM compensation_table")
+                    write_section("Employee Company Info", "SELECT * FROM employee_company_info")
+                    write_section("Employee Time Off", "SELECT * FROM employee_time_off")
+                    write_section("Badge Sign In Times", "SELECT * FROM badge_sign_in_times")
+
+            msgbox.showinfo("Success", f"Data exported to {file_path}")
+        except Exception as e:
+            msgbox.showerror("Error", f"Failed to export data.\n{str(e)}")
+
+    #Buttons - they need to come after the function def
     search_btn = ttk.Button(entry_frame, text="Search", command=lambda: search_employee(employee_id_entry.get()))
     search_btn.grid(row=0, column=2, padx=5)
 
@@ -267,6 +324,9 @@ def build_lookup_tab(parent, connection, cursor):
 
     badge_swipes_btn = ttk.Button(entry_frame, text="Show All Badge Swipes", command=show_all_badge_swipes)
     badge_swipes_btn.grid(row=0, column=4, padx=5)
+
+    export_btn = ttk.Button(entry_frame, text="Export to CSV", command=export_to_csv)
+    export_btn.grid(row=0, column=5, padx=5)
 
 def build_delete_tab(parent, connection, cursor):
     label = ttk.Label(parent, text="Delete Employee Record")
@@ -318,10 +378,11 @@ def build_delete_tab(parent, connection, cursor):
 def main_gui_shell(DB_PATH, connection, cursor):
     root = tk.Tk()
     root.title("Employee Manager")
-    root.geometry("1400x1000")
+    root.geometry("1000x1000")
 
     notebook = ttk.Notebook(root)
     notebook.pack(expand=True, fill="both")
+    
     #creates the frames for tabs
     create_frame = ttk.Frame(notebook)
     modify_frame = ttk.Frame(notebook)
@@ -338,4 +399,5 @@ def main_gui_shell(DB_PATH, connection, cursor):
     build_modify_tab(modify_frame, connection, cursor)
     build_lookup_tab(lookup_frame, connection, cursor)
     build_delete_tab(delete_frame, connection, cursor)
+
     root.mainloop()
