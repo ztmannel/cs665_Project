@@ -3,26 +3,8 @@ import tkinter.messagebox as msgbox
 from tkinter import ttk
 import helper_functions as help
 import sqlite3
-#import os
 
-def create_tab(DB_PATH, connection, cursor):
-    root = tk.Tk()
-    root.title("Employee Manager")
-    root.geometry("500x600")
-
-    notebook = ttk.Notebook(root)
-    notebook.pack(expand=True, fill='both')
-
-    create_tab = ttk.Frame(notebook)
-    modify_tab = ttk.Frame(notebook)
-    lookup_tab = ttk.Frame(notebook)
-
-    notebook.add(create_tab, text='Create')
-    notebook.add(modify_tab, text='Modify')
-    notebook.add(lookup_tab, text='Lookup')
-
-    label1 = ttk.Label(create_tab, text="Add a new employee")
-    label1.pack(pady=20)
+def build_create_tab(parent, connection, cursor):
 
     entry_widgets = {}
 
@@ -58,8 +40,8 @@ def create_tab(DB_PATH, connection, cursor):
     }
 
     # Scrollable canvas
-    canvas = tk.Canvas(create_tab)
-    scrollbar = ttk.Scrollbar(create_tab, orient="vertical", command=canvas.yview)
+    canvas = tk.Canvas(parent)
+    scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
     scroll_frame = ttk.Frame(canvas)
 
     scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
@@ -98,6 +80,114 @@ def create_tab(DB_PATH, connection, cursor):
     
     #button to actually clear the fields
     clear_btn = ttk.Button(scroll_frame, text="Clear", command=lambda: help.clear_fields(employee_id_entry, entry_widgets, connection, cursor))
-    clear_btn.pack(pady=(0, 10))    
+    clear_btn.pack(pady=(0, 10))
+
+def main_gui_shell(DB_PATH, connection, cursor):
+    root = tk.Tk()
+    root.title("Employee Manager")
+    root.geometry("600x700")
+
+    notebook = ttk.Notebook(root)
+    notebook.pack(expand=True, fill="both")
+
+    create_frame = ttk.Frame(notebook)
+    modify_frame = ttk.Frame(notebook)
+    lookup_frame = ttk.Frame(notebook)
+
+    notebook.add(create_frame, text="Create")
+    notebook.add(modify_frame, text="Modify")
+    notebook.add(lookup_frame, text="Lookup")
+
+    build_create_tab(create_frame, connection, cursor)
+    #populate_modify_tab(modify_frame, connection, cursor)
+    # populate_lookup_tab(lookup_frame, connection, cursor)  # optional
 
     root.mainloop()
+
+def modify_tab(DB_PATH, connection, cursor):
+    modify_frame = ttk.Frame(notebook)
+    notebook.add(modify_frame, text='Modify')
+    
+    label1 = ttk.Label(modify_frame, text="Modify Employee Info")
+    label1.pack(pady=20)
+    
+    #Entry for Employee ID to search for an employee
+    ttk.Label(modify_frame, text="Enter Employee ID").pack(pady=(10, 0))
+    employee_id_entry = ttk.Entry(modify_frame)
+    employee_id_entry.pack(pady=(5, 10))
+    
+    #Button to trigger search
+    def search_employee():
+        employee_id = employee_id_entry.get()
+        if not employee_id:
+            msgbox.showerror("Missing Info", "Employee ID is required.")
+            return
+        
+        cursor.execute("SELECT * FROM employee_personal_info WHERE employee_id = ?", (employee_id,))
+        employee = cursor.fetchone()
+        
+        if not employee:
+            msgbox.showerror("Not Found", f"Employee ID {employee_id} not found.")
+            return
+        
+        #Fill the fields with the data of the employee
+        first_name_entry.delete(0, tk.END)
+        first_name_entry.insert(0, employee[1])  # Assuming the first name is in index 1
+
+        #Similarly fill all other fields:
+        last_name_entry.delete(0, tk.END)
+        last_name_entry.insert(0, employee[2])  # Last name at index 2
+        
+        #Continue this for all fields you want to modify...
+
+    search_btn = ttk.Button(modify_frame, text="Search Employee", command=search_employee)
+    search_btn.pack(pady=(5, 10))
+    
+    #Display Fields to Modify (Assuming employee info fields)
+    #These fields are where the user will modify data
+
+    def generate_modify_fields(parent_frame):
+        global first_name_entry, last_name_entry
+        
+        ttk.Label(parent_frame, text="First Name").pack(pady=(5, 0))
+        first_name_entry = ttk.Entry(parent_frame)
+        first_name_entry.pack(pady=(5, 10))
+        
+        ttk.Label(parent_frame, text="Last Name").pack(pady=(5, 0))
+        last_name_entry = ttk.Entry(parent_frame)
+        last_name_entry.pack(pady=(5, 10))
+        
+        #Similarly add other fields like position, phone, etc...
+        
+    generate_modify_fields(modify_frame)
+    
+    #Save changes back to the database
+    def update_employee():
+        employee_id = employee_id_entry.get()
+        if not employee_id:
+            msgbox.showerror("Missing Info", "Employee ID is required.")
+            return
+        
+        cursor.execute("SELECT 1 FROM employee_personal_info WHERE employee_id = ?", (employee_id,))
+        if not cursor.fetchone():
+            msgbox.showerror("Not Found", f"Employee ID {employee_id} not found.")
+            return
+        
+        #Collect the modified values from the fields
+        first_name = first_name_entry.get()
+        last_name = last_name_entry.get()
+        
+        #Add other fields like position, phone, etc...
+        
+        #Update the employee in the database
+        cursor.execute("""
+            UPDATE employee_personal_info
+            SET first_name = ?, last_name = ?
+            WHERE employee_id = ?
+        """, (first_name, last_name, employee_id))
+        
+        connection.commit()
+        msgbox.showinfo("Success", "Employee information updated successfully.")
+    
+    save_btn = ttk.Button(modify_frame, text="Save Changes", command=update_employee)
+    save_btn.pack(pady=(10, 20))
