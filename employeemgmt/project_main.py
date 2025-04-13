@@ -1,6 +1,7 @@
 '''
 Zach Mannel
 employee management system interface
+#OPTIONAL TODO: move the field horizontal vs the pure vertical trash
 '''
 import sqlite3
 import os
@@ -34,8 +35,8 @@ for command in sqlCommands:
 connection.commit()
 
 #passing the path, connection, and cursor so dont need to continuously create
-gui_functions.create_tab(DB_PATH, connection, cursor)
-gui_functions.modify_tab(DB_PATH, connection, cursor)
+gui_functions.main_gui_shell(DB_PATH, connection, cursor)
+#gui_functions.modify_tab(DB_PATH, connection, cursor)
 #gui_build.lookup_tab()
 #gui_build.delete_tab()
 
