@@ -117,22 +117,25 @@ def build_modify_tab(parent, connection, cursor):
         personal_email = ttk.Entry(parent)
 
         #Map field names to their respective indices
-        field_map = {
-            "first_name": (first_name, 1),
-            "last_name": (last_name, 2),
-            "position": (position, 3),
-            "phone": (phone, 4),
-            "address": (address, 5),
-            "city": (city, 6),
-            "state": (state, 7),
-            "country": (country, 8),
-            "personal_email": (personal_email, 9)
-        }
+        fields = [
+            ("first_name", 1),
+            ("last_name", 2),
+            ("position", 3),
+            ("phone", 4),
+            ("address", 5),
+            ("city", 6),
+            ("state", 7),
+            ("country", 8),
+            ("personal_email", 9)
+        ]
+
+        field_map = {}
 
         #Loop through each entry widget and fill corresponding value
-        for field_name, (entry_widget, index) in field_map.items():
-            entry_widget.delete(0, tk.END)
+        for field_name, index in fields:
+            entry_widget = ttk.Entry(parent)
             entry_widget.insert(0, employee[index])
+            field_map[field_name] = (entry_widget, index)
         
         generate_modify_fields(parent, field_map)
 
