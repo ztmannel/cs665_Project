@@ -1,7 +1,7 @@
 import tkinter as tk
 import tkinter.messagebox as msgbox
 from tkinter import ttk
-import helper_functions
+import helper_functions as help
 import sqlite3
 #import os
 
@@ -93,29 +93,11 @@ def create_tab(DB_PATH, connection, cursor):
     for table_name, fields in static_fields.items():
         generate_static_fields(scroll_frame, table_name, fields)
 
-    def on_submit():
-        employee_id = employee_id_entry.get()
-        #will pop a dialog for employee id
-        if not employee_id:
-            msgbox.showerror("Missing Info", "Employee ID is required.")
-            return
-        #check for existing employee_id. using ? will prevent sql injection via parameter
-        cursor.execute("SELECT 1 FROM employee_personal_info WHERE employee_id = ?", (employee_id,))
-        if cursor.fetchone():
-            msgbox.showerror("Invalid Entry", "Employee ID {employee_id} already exists")
-            return
-
-        #Inject into all hidden fields regardless of table name to prevent duplicate or conflicting inputs
-        for key in entry_widgets:
-            if key.endswith(".employee_id"):
-                entry_widgets[key].delete(0, tk.END)
-                entry_widgets[key].insert(0, employee_id)
-
-        helper_functions.insert_all_data(connection, cursor, entry_widgets)
-        connection.commit()
-        print("User Added Successfully")
-
-    submit_btn = ttk.Button(scroll_frame, text="Submit", command=on_submit)
+    submit_btn = ttk.Button(scroll_frame, text="Submit", command=lambda: help.on_submit(employee_id_entry, entry_widgets, connection, cursor))
     submit_btn.pack(pady=20)
+    
+    #button to actually clear the fields
+    clear_btn = ttk.Button(scroll_frame, text="Clear", command=lambda: help.clear_fields(employee_id_entry, entry_widgets, connection, cursor))
+    clear_btn.pack(pady=(0, 10))    
 
     root.mainloop()
