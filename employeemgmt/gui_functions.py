@@ -205,6 +205,69 @@ def build_modify_tab(parent, connection, cursor):
         connection.commit()
         msgbox.showinfo("Success", "Employee information updated successfully.")
 
+def build_lookup_tab(parent, connection, cursor):
+    label = ttk.Label(parent, text="Lookup Employee Info")
+    label.pack(pady=10)
+
+    entry_frame = ttk.Frame(parent)
+    entry_frame.pack(pady=(5, 10))
+
+    ttk.Label(entry_frame, text="Enter Employee ID:").grid(row=0, column=0, padx=5)
+    employee_id_entry = ttk.Entry(entry_frame)
+    employee_id_entry.grid(row=0, column=1, padx=5)
+
+    def list_all_employee_ids():
+        cursor.execute("SELECT employee_id FROM employee_personal_info ORDER BY employee_id")
+        ids = cursor.fetchall()
+        if not ids:
+            msgbox.showinfo("No Records", "No employee records found.")
+            return
+
+        top = tk.Toplevel()
+        top.title("All Employee IDs")
+
+        listbox = tk.Listbox(top, width=40, height=20)
+        listbox.pack(padx=10, pady=10)
+
+        for (emp_id,) in ids:
+            listbox.insert(tk.END, emp_id)
+
+    def show_all_badge_swipes():
+        cursor.execute("""
+            SELECT first_name, last_name, date_scanned, time_scanned
+            FROM employee_personal_info p
+            JOIN badge_info b ON p.employee_id = b.employee_id
+            JOIN badge_sign_in_times bst ON b.badge_id = bst.badge_id
+            ORDER BY date_scanned DESC, time_scanned DESC
+        """)
+        records = cursor.fetchall()
+        if not records:
+            msgbox.showinfo("No Records", "No badge swipes found.")
+            return
+
+        top = tk.Toplevel()
+        top.title("All Badge Swipes")
+
+        tree = ttk.Treeview(top, columns=("first", "last", "date", "time"), show="headings")
+        tree.heading("first", text="First Name")
+        tree.heading("last", text="Last Name")
+        tree.heading("date", text="Date Scanned")
+        tree.heading("time", text="Time Scanned")
+        tree.pack(fill="both", expand=True, padx=10, pady=10)
+
+        for row in records:
+            tree.insert("", tk.END, values=row)
+
+    # Buttons
+    search_btn = ttk.Button(entry_frame, text="Search", command=lambda: search_employee(employee_id_entry.get()))
+    search_btn.grid(row=0, column=2, padx=5)
+
+    list_ids_btn = ttk.Button(entry_frame, text="List All Employee IDs", command=list_all_employee_ids)
+    list_ids_btn.grid(row=0, column=3, padx=5)
+
+    badge_swipes_btn = ttk.Button(entry_frame, text="Show All Badge Swipes", command=show_all_badge_swipes)
+    badge_swipes_btn.grid(row=0, column=4, padx=5)
+
 #THIS IS THE MAIN SHELL FOR THE GUI
 def main_gui_shell(DB_PATH, connection, cursor):
     root = tk.Tk()
@@ -224,6 +287,6 @@ def main_gui_shell(DB_PATH, connection, cursor):
 
     build_create_tab(create_frame, connection, cursor)
     build_modify_tab(modify_frame, connection, cursor)
-#    build_lookup_tab(lookup_frame, connection, cursor)
-
+    build_lookup_tab(lookup_frame, connection, cursor)
+    #build_delete_tab(lookup_frame, connection, cursor)
     root.mainloop()
