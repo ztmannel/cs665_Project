@@ -233,7 +233,41 @@ def build_lookup_tab(parent, connection, cursor):
 
         for (emp_id,) in ids:
             listbox.insert(tk.END, emp_id)
+    def search_employee(employee_id):
+        if not employee_id:
+            msgbox.showerror("Missing Info", "Please enter an Employee ID.")
+            return
 
+        cursor.execute("""
+            SELECT p.first_name, p.last_name, p.position, p.phone, p.address,
+                    p.city, p.state, p.country, p.personal_email,
+                    c.company_email, c.department, c.manager_emp_id, c.hire_date, c.termination_date,
+                    t.hours_remaining, t.hours_consumed, t.total_annual_hours
+            FROM employee_personal_info p
+            LEFT JOIN employee_company_info c ON p.employee_id = c.employee_id
+            LEFT JOIN employee_time_off t ON p.employee_id = t.employee_id
+            WHERE p.employee_id = ?
+        """, (employee_id,))
+        result = cursor.fetchone()
+
+        if not result:
+            msgbox.showinfo("Not Found", f"No info found for Employee ID {employee_id}")
+            return
+
+        top = tk.Toplevel()
+        top.title(f"Employee {employee_id} Info")
+
+        labels = [
+            "First Name", "Last Name", "Position", "Phone", "Address",
+            "City", "State", "Country", "Personal Email",
+            "Company Email", "Department", "Manager ID", "Hire Date", "Termination Date",
+            "Time Off Remaining", "Time Off Used", "Total Time Off Allowed"
+        ]
+
+        for idx, value in enumerate(result):
+            ttk.Label(top, text=f"{labels[idx]}:").grid(row=idx, column=0, sticky="w", padx=10, pady=2)
+            ttk.Label(top, text=str(value)).grid(row=idx, column=1, sticky="w", padx=10, pady=2)
+        
     def show_all_badge_swipes():
         cursor.execute("""
             SELECT first_name, last_name, date_scanned, time_scanned
