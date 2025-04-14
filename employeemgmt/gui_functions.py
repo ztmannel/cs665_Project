@@ -81,7 +81,7 @@ def build_create_tab(parent, connection, cursor):
     submit_btn.pack(pady=20)
     
     #button to actually clear the fields
-    clear_btn = ttk.Button(scroll_frame, text="Clear", command=lambda: help.clear_fields(employee_id_entry, entry_widgets, connection, cursor))
+    clear_btn = ttk.Button(scroll_frame, text="Clear", command=lambda: help.clear_fields(employee_id_entry, entry_widgets))
     clear_btn.pack(pady=(0, 10))
 
 def build_modify_tab(parent, connection, cursor):
