@@ -3,6 +3,7 @@
 from collections import defaultdict
 import sqlite3
 import tkinter as tk
+import tkinter.messagebox as msgbox
 
 #creates the table_data so we can build the sql statements
 def group_entries_by_table(entry_widgets):
@@ -59,7 +60,7 @@ def on_submit(employee_id_entry, entry_widgets, connection, cursor):
 
     insert_all_data(connection, cursor, entry_widgets)
     connection.commit()
-    print("User Added Successfully")
+    msgbox.showinfo("Success", "Employee added to system successfully.")
 
 def clear_fields(employee_id_entry, entry_widgets):
     for widget in entry_widgets.values():
