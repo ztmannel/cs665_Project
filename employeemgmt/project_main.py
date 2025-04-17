@@ -1,7 +1,7 @@
 '''
 Zach Mannel
 employee management system interface
-#OPTIONAL TODO: move the field horizontal vs the pure vertical trash
+#OPTIONAL TODO: modify the lookup dialogs to use scroll wheels - the output can overlap on a smaller screen
 '''
 import sqlite3
 import os
